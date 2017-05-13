@@ -107,6 +107,20 @@ static bool validate_header(const char **ptr)
    return true;
 }
 
+static bool skip_doctype(const char **ptr)
+{
+	if (memcmp(*ptr, "<!DOCTYPE",9) == 0)
+	{
+		printf("<!DOCTYPE found\n");
+		const char *eol = strstr(*ptr, ">\n");
+		if(!eol)
+			return false;
+		*ptr = eol + 2;
+		return true;
+	}
+	return true;
+}
+
 static bool range_is_space(const char *begin, const char *end)
 {
    for (; begin < end; begin++)
@@ -261,7 +275,6 @@ static struct rxml_node *rxml_parse_node(const char **ptr_)
    str = strdup_range(ptr + 1, closing);
    if (!str)
       goto error;
-
    if (!rxml_parse_tag(node, str))
       goto error;
 
@@ -411,10 +424,6 @@ static char *purge_xml_comments(const char *str)
 
 rxml_document_t *rxml_load_document(const char *path)
 {
-#ifndef RXML_TEST
-   RARCH_WARN("Using RXML as drop in for libxml2. Behavior might be very buggy.\n");
-#endif
-
    char *memory_buffer     = NULL;
    char *new_memory_buffer = NULL;
    const char *mem_ptr     = NULL;
@@ -447,6 +456,9 @@ rxml_document_t *rxml_load_document(const char *path)
    if (!validate_header(&mem_ptr))
       goto error;
 
+   if (!skip_doctype(&mem_ptr))
+	   goto error; 
+  
    new_memory_buffer = purge_xml_comments(mem_ptr);
    if (!new_memory_buffer)
       goto error;

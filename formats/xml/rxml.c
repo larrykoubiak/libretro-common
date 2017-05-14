@@ -71,9 +71,6 @@ static void rxml_free_node(struct rxml_node *node)
       
       next_attrib = (struct rxml_attrib_node*)attrib_node_head->next;
 
-      if (!next_attrib)
-         continue;
-
       if (attrib_node_head->attrib)
          free(attrib_node_head->attrib);
       if (attrib_node_head->value)

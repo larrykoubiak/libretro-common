@@ -154,7 +154,7 @@ static char *strdup_range_escape(const char *begin, const char *end)
    return strdup_range(begin, end);
 }
 
-static char *tokenize(char *str, const char *delim, char **saveptr)
+static char *rxml_attrib_tokenize(char *str, const char *delim, char **saveptr)
 {
    char *first = NULL;
    if (!saveptr || !delim)
@@ -178,6 +178,8 @@ static char *tokenize(char *str, const char *delim, char **saveptr)
 		 {
 			 ptr++;
 			 ptr = strchr(ptr,'\"');
+			 if(!ptr)
+				 return NULL;
 		 }
 		 ptr++;  
 	  }
@@ -205,7 +207,7 @@ static struct rxml_attrib_node *rxml_parse_attrs(const char *str)
    char *attrib = NULL;
    char *value = NULL;
    char *save;
-   const char *elem = tokenize(copy, " \n\t\f\v\r", &save);
+   const char *elem = rxml_attrib_tokenize(copy, " \n\t\f\v\r", &save);
    while (elem)
    {
       const char *eq = strstr(elem, "=\"");
@@ -239,7 +241,7 @@ static struct rxml_attrib_node *rxml_parse_attrs(const char *str)
       else
          list = tail = new_node;
 
-      elem = tokenize(NULL, " \n\t\f\v\r", &save);
+      elem = rxml_attrib_tokenize(NULL, " \n\t\f\v\r", &save);
    }
 
 end:

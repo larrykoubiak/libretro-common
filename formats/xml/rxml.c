@@ -111,7 +111,6 @@ static bool skip_doctype(const char **ptr)
 {
 	if (memcmp(*ptr, "<!DOCTYPE",9) == 0)
 	{
-		printf("<!DOCTYPE found\n");
 		const char *eol = strstr(*ptr, ">\n");
 		if(!eol)
 			return false;
@@ -158,6 +157,41 @@ static char *strdup_range_escape(const char *begin, const char *end)
    return strdup_range(begin, end);
 }
 
+static char *tokenize(char *str, const char *delim, char **saveptr)
+{
+   char *first = NULL;
+   if (!saveptr || !delim)
+      return NULL;
+
+   if (str)
+      *saveptr = str;
+   do
+   {
+      char *ptr = NULL;
+      first = *saveptr;
+      while (*first && strchr(delim, *first))
+         *first++ = '\0';
+
+	 if (*first == '\0')
+         return NULL;
+      ptr = first + 1;
+      while (*ptr && !strchr(delim, *ptr))
+	  {
+		 if(*ptr=='\"')
+		 {
+			 ptr++;
+			 ptr = strchr(ptr,'\"');
+		 }
+		 ptr++;  
+	  }
+		
+      *saveptr = ptr + (*ptr ? 1 : 0);
+      *ptr     = '\0';
+   } while (strlen(first) == 0);
+
+   return first;
+}
+
 static struct rxml_attrib_node *rxml_parse_attrs(const char *str)
 {
    char *copy = strdup(str);
@@ -174,7 +208,7 @@ static struct rxml_attrib_node *rxml_parse_attrs(const char *str)
    char *attrib = NULL;
    char *value = NULL;
    char *save;
-   const char *elem = strtok_r(copy, " \n\t\f\v\r", &save);
+   const char *elem = tokenize(copy, " \n\t\f\v\r", &save);
    while (elem)
    {
       const char *eq = strstr(elem, "=\"");
@@ -208,7 +242,7 @@ static struct rxml_attrib_node *rxml_parse_attrs(const char *str)
       else
          list = tail = new_node;
 
-      elem = strtok_r(NULL, " \n\t\f\v\r", &save);
+      elem = tokenize(NULL, " \n\t\f\v\r", &save);
    }
 
 end:

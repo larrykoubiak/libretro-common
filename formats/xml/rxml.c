@@ -93,12 +93,16 @@ static bool validate_header(const char **ptr)
 {
    if (memcmp(*ptr, "<?xml", 5) == 0)
    {
-      const char *eol = strstr(*ptr, "?>\n");
-      if (!eol)
+      const char *lf = strstr(*ptr, "?>\n");
+	  const char *crlf = strstr(*ptr, "?>\r\n");
+      if(!lf && !crlf)
          return false;
 
       /* Always use UTF-8. Don't really care to check. */
-      *ptr = eol + 3;
+	  if(crlf)
+		*ptr = crlf + 4;
+	  else
+		*ptr = lf + 3;
       return true;
    }
    return true;
@@ -108,10 +112,14 @@ static bool skip_doctype(const char **ptr)
 {
 	if (memcmp(*ptr, "<!DOCTYPE",9) == 0)
 	{
-		const char *eol = strstr(*ptr, ">\n");
-		if(!eol)
+		const char *lf = strstr(*ptr, ">\n");
+		const char *crlf = strstr(*ptr, ">\r\n");
+		if(!lf && !crlf)
 			return false;
-		*ptr = eol + 2;
+		if(crlf)
+			*ptr = crlf + 3;
+		else
+			*ptr = lf + 2;
 		return true;
 	}
 	return true;
@@ -167,7 +175,7 @@ static char *rxml_attrib_tokenize(char *str, const char *delim, char **saveptr)
       char *ptr = NULL;
       first = *saveptr;
       while (*first && strchr(delim, *first))
-         *first++ = '\0';
+		*first++ = '\0';
 
 	 if (*first == '\0')
          return NULL;
@@ -490,9 +498,10 @@ rxml_document_t *rxml_load_document(const char *path)
       goto error;
 
    if (!skip_doctype(&mem_ptr))
-	   goto error; 
+      goto error;
   
    new_memory_buffer = purge_xml_comments(mem_ptr);
+   
    if (!new_memory_buffer)
       goto error;
 
@@ -535,4 +544,3 @@ char *rxml_node_attrib(struct rxml_node *node, const char *attrib)
 
    return NULL;
 }
-
